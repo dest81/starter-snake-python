@@ -7,29 +7,58 @@ This file can be a nice home for your move logic, and to write helper functions.
 We have started this for you, with a function to help remove the 'neck' direction
 from the list of possible moves!
 """
+def remove_moves(moves, move):
+    if move in moves:
+        moves.remove(move)
+    return moves
 
 
-def avoid_my_neck(my_head: Dict[str, int], my_body: List[dict], possible_moves: List[str]) -> List[str]:
-    """
-    my_head: Dictionary of x/y coordinates of the Battlesnake head.
-            e.g. {"x": 0, "y": 0}
-    my_body: List of dictionaries of x/y coordinates for every segment of a Battlesnake.
-            e.g. [ {"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 2, "y": 0} ]
-    possible_moves: List of strings. Moves to pick from.
-            e.g. ["up", "down", "left", "right"]
+def avoid_cells(my_head: Dict[str, int], cells: List[dict], possible_moves: List[str]) -> List[str]:
 
-    return: The list of remaining possible_moves, with the 'neck' direction removed
-    """
-    my_neck = my_body[1]  # The segment of body right after the head is the 'neck'
+    for c in cells:
+        x_c, y_c = c.values()
+        if x_c + 1 == my_head["x"] and y_c == my_head["y"]:
+            remove_moves(possible_moves, "left")
+        if x_c - 1 == my_head["x"] and y_c == my_head["y"]:
+            remove_moves(possible_moves, "right")
 
-    if my_neck["x"] < my_head["x"]:  # my neck is left of my head
-        possible_moves.remove("left")
-    elif my_neck["x"] > my_head["x"]:  # my neck is right of my head
-        possible_moves.remove("right")
-    elif my_neck["y"] < my_head["y"]:  # my neck is below my head
-        possible_moves.remove("down")
-    elif my_neck["y"] > my_head["y"]:  # my neck is above my head
-        possible_moves.remove("up")
+        if y_c + 1 == my_head["y"] and x_c == my_head["x"]:
+            remove_moves(possible_moves, "down")
+        if y_c -1 == my_head["y"] and x_c == my_head["x"]:
+            remove_moves(possible_moves, "up")
+
+        return possible_moves
+
+
+def food_first(my_head: Dict[str, int], cells: List[dict], possible_moves: List[str]) -> List[str]:
+
+    for c in cells:
+        x_c, y_c = c.values()
+        if x_c + 1 == my_head["x"] and y_c == my_head["y"]:
+            possible_moves = ["left"]
+        elif x_c - 1 == my_head["x"] and y_c == my_head["y"]:
+            possible_moves = ["right"]
+        elif y_c + 1 == my_head["y"] and x_c == my_head["x"]:
+            possible_moves = ["down"]
+        elif y_c -1 == my_head["y"] and x_c == my_head["x"]:
+            possible_moves =  ["up"]
+
+    return possible_moves
+
+
+def avoid_board_edges(my_head: Dict[str, int], my_board: List[dict], possible_moves: List[str]) -> List[str]:
+    height = my_board["height"]
+    width = my_board["width"]
+
+    if my_head["x"] == 0:
+        remove_moves(possible_moves, "left")
+    elif my_head["x"] == width-1:
+        remove_moves(possible_moves, "right")
+
+    if my_head["y"] == 0:
+        remove_moves(possible_moves, "down")
+    elif my_head["y"] == height-1:
+        remove_moves(possible_moves, "up")
 
     return possible_moves
 
@@ -46,31 +75,43 @@ def choose_move(data: dict) -> str:
     for each move of the game.
 
     """
-    my_head = data["you"]["head"]  # A dictionary of x/y coordinates like {"x": 0, "y": 0}
-    my_body = data["you"]["body"]  # A list of x/y coordinate dictionaries like [ {"x": 0, "y": 0}, {"x": 1, "y": 0}, {"x": 2, "y": 0} ]
-
-    # TODO: uncomment the lines below so you can see what this data looks like in your output!
-    # print(f"~~~ Turn: {data['turn']}  Game Mode: {data['game']['ruleset']['name']} ~~~")
-    # print(f"All board data this turn: {data}")
-    # print(f"My Battlesnakes head this turn is: {my_head}")
-    # print(f"My Battlesnakes body this turn is: {my_body}")
+    my_head = data["you"]["head"]
+    my_board = data["board"]
 
     possible_moves = ["up", "down", "left", "right"]
 
-    # Don't allow your Battlesnake to move back in on it's own neck
-    possible_moves = avoid_my_neck(my_head, my_body, possible_moves)
+    # food first
+    food = data["board"]["food"]
+    possible_moves = food_first(my_head, food, possible_moves)
+    if len(possible_moves) == 1:
+        return possible_moves[0]
 
-    # TODO: Using information from 'data', find the edges of the board and don't let your Battlesnake move beyond them
-    # board_height = ?
-    # board_width = ?
+    # avoid board
+    # print("avoid edges")
+    possible_moves = avoid_board_edges(my_head, my_board, possible_moves)
 
-    # TODO Using information from 'data', don't let your Battlesnake pick a move that would hit its own body
+    # avoid own body
+    my_body = data["you"]["body"]
+    possible_moves = avoid_cells(my_head, my_body, possible_moves)
+    # print(possible_moves)
 
-    # TODO: Using information from 'data', don't let your Battlesnake pick a move that would collide with another Battlesnake
+    # avoid own other snakes
+    snakes = data["board"]["snakes"]
+    for snake in snakes:
+        snake_body = snake["body"]
+        possible_moves = avoid_cells(my_head, snake_body, possible_moves)
+
+    # avoid hazards
+    hazards = data["board"]["hazards"]
+    possible_moves = avoid_cells(my_head, hazards, possible_moves)
+    print(possible_moves)
+
+    print(my_head)
 
     # TODO: Using information from 'data', make your Battlesnake move towards a piece of food on the board
 
     # Choose a random direction from the remaining possible_moves to move in, and then return that move
+    print(possible_moves)
     move = random.choice(possible_moves)
     # TODO: Explore new strategies for picking a move that are better than random
 
