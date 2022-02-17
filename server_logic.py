@@ -24,7 +24,7 @@ def avoid_cells(my_head: Dict[str, int], cells: List[dict], possible_moves: List
 
         if y_c + 1 == my_head["y"] and x_c == my_head["x"]:
             remove_moves(possible_moves, "down")
-        if y_c -1 == my_head["y"] and x_c == my_head["x"]:
+        if y_c - 1 == my_head["y"] and x_c == my_head["x"]:
             remove_moves(possible_moves, "up")
 
         return possible_moves
@@ -40,8 +40,8 @@ def food_first(my_head: Dict[str, int], cells: List[dict], possible_moves: List[
             possible_moves = ["right"]
         elif y_c + 1 == my_head["y"] and x_c == my_head["x"]:
             possible_moves = ["down"]
-        elif y_c -1 == my_head["y"] and x_c == my_head["x"]:
-            possible_moves =  ["up"]
+        elif y_c - 1 == my_head["y"] and x_c == my_head["x"]:
+            possible_moves = ["up"]
 
     return possible_moves
 
@@ -52,12 +52,12 @@ def avoid_board_edges(my_head: Dict[str, int], my_board: List[dict], possible_mo
 
     if my_head["x"] == 0:
         remove_moves(possible_moves, "left")
-    elif my_head["x"] == width-1:
+    elif my_head["x"] == width - 1:
         remove_moves(possible_moves, "right")
 
     if my_head["y"] == 0:
         remove_moves(possible_moves, "down")
-    elif my_head["y"] == height-1:
+    elif my_head["y"] == height - 1:
         remove_moves(possible_moves, "up")
 
     return possible_moves
@@ -87,13 +87,14 @@ def choose_move(data: dict) -> str:
         return possible_moves[0]
 
     # avoid board
-    # print("avoid edges")
+    print("avoid edges")
     possible_moves = avoid_board_edges(my_head, my_board, possible_moves)
+    print(possible_moves)
 
     # avoid own body
     my_body = data["you"]["body"]
     possible_moves = avoid_cells(my_head, my_body, possible_moves)
-    # print(possible_moves)
+    print(possible_moves)
 
     # avoid own other snakes
     snakes = data["board"]["snakes"]
